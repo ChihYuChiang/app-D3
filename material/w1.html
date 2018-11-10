@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="page-header">
+        <h1>Hello!</h1>
+        <img src="../img/test.png" />
+    </div>
+
+    <p class="main-paragraph">This is an example paragraph.</p>
+    <p>And this is the second paragraph.</p>
+
+    <ul>
+        <li>Point 1</li>
+        <li>Point 2</li>
+    </ul>
+
+    <div>
+        <button onclick="changeText()">changeText</button>
+        <button onclick="changeHtml()">changeHtml</button>
+    </div>
+    <div>
+        <button onclick="appendItem()">appendItem</button>
+        <button onclick="removeAll()">removeAll</button>
+        <button onclick="removeLast()">removeLast</button>
+    </div>
+    <div>
+        <button onclick="changeImg('black.png')">changeImg</button>
+        <button onclick="changeStyle()">changeStyle</button>
+    </div>
+</body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+    let header = d3.select("#page-header");
+    console.log(header.node());
+    let ps = d3.selectAll("p");
+    console.log(ps.nodes());
+
+    function changeText() {
+        d3.select("h1").text("New Text");
+    }
+    function changeHtml() {
+        d3.select("h1").html("<small>Small</small> Normal");
+    }
+
+    function count(l) {
+        return l.selectAll("li").size();
+    }
+    function appendItem() {
+        let l = d3.select("ul");
+        l.append("li")
+            .text("New item! " + count(l));
+    }
+    function removeAll() {
+        d3.selectAll("li")
+            .remove();
+    }
+    function removeLast() {
+        d3.select("li:last-child")
+            .remove();
+    }
+    
+    function changeImg(name) {
+        d3.select("img")
+            .attr("src", "../img/" + name);
+    }
+    function changeStyle(name) {
+        let color = d3.select("h1").style("color");
+        console.log(color);
+        if(color == "rgb(0, 0, 0)") {
+            d3.select("h1")
+                .style("color", "red");
+        }
+    }
+</script>
+</html>
