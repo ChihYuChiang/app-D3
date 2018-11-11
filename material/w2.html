@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="container"></div>
+    <div id="container2"></div>
+    <div id="container3"></div>
+
+    <svg style="border: solid 1px">
+        <g transform="translate(50, 50) rotate(60, 50, 50)"> <!--Specify the rotation center-->
+            <rect x=20 y=20 width=50 height=50 /> <!--Top left origin-->
+            <circle r=20 cx=30 cy=30 fill="red" /> <!--Center origin-->
+            <text>Text</text>
+        </g>
+    </svg>
+    <br>
+    <svg id="container4">
+        <g id="body" transform="translate(50, 0)"></g>
+        <g id="xAxis"></g>
+        <g id="yAxis"></g>
+    </svg>
+</body>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<script>
+    let container = d3.select("#container");
+    d3.csv("../data/w2.csv")
+        .then((data) => {
+            //Sort change itself
+            data.sort((row1, row2) => d3.ascending(row1.score, row2.score));
+            //Filter return new array
+            data = data.filter((row) => row.score < 15);
+
+            data.map((row) => row.dScore = row.score * 2);
+
+            showData(data);
+        })
+        .catch();
+        
+    function showData(data) {
+        for(let row of data) write(row.name + " " + row.score + " " + row.dScore);
+        
+        write("----------");
+        let sum = data.reduce((prev, curr) => prev + Number(curr.score), 0);
+        let mean = sum / data.length;
+        write("Mean score: " + mean);
+
+        write("----------");
+        let summation = d3.sum(data, (row) => row.score);
+        write("Sum: " + summation);
+        let extent = d3.extent(data, (row) => row.score);
+        write("Extent: " + extent);
+    }
+    function write(text) {
+        container.append("div").text(text);
+    }
+
+    let container2 = d3.select("#container2");
+    function showData2(data) {
+        let join = container2.selectAll("div").data(data);
+        join.enter()
+            .append("div")
+            .text((row) => row.name); 
+        //join.exit()
+        //join (itself represents the update set)
+    }
+    d3.csv("../data/w2.csv")
+        .then(showData2)
+
+    let container3 = d3.select("#container3");
+    function showData3(data) {
+        let max = d3.max(data, (row) => row.score);
+        let scale = d3.scaleLinear()
+            .range([0, 50])
+            .domain([0, max]);
+        let positionScale = d3.scaleBand()
+            .range([0, 100])
+            .domain(data.map((row) => row.name))
+            .padding(0.1)
+        
+        let join = container3.selectAll("div").data(data);
+        join.enter()
+            .append("div")
+            .text((row) => row.name + scale(row.score))
+            .style("background-color", "blue")
+            .style("margin", "5px")
+            .style("color", "white") 
+            .style("width", (row) => scale(row.score) + "px");
+        
+        d3.select("#body").selectAll("rect").data(data)
+            .enter()
+            .append("rect")
+            .attr("fill", "blue")
+            .attr("width", (row) => scale(row.score))
+            .attr("height", positionScale.bandwidth())
+            .attr("y", (row) => positionScale(row.name));
+        let xAxis = d3.axisBottom(scale)
+            .ticks(3)
+            .tickFormat((label) => label + "t");
+        d3.select("#xAxis")
+            .attr("transform", "translate(50, 100)")
+            .call(xAxis);
+            let yAxis = d3.axisLeft(positionScale)
+        d3.select("#yAxis")
+            .attr("transform", "translate(50, 0)")
+            .call(yAxis);
+    }
+    d3.csv("../data/w2.csv")
+        .then(showData3)
+</script>
+</html>
