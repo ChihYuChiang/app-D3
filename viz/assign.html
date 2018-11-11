@@ -19,7 +19,9 @@
         .mainView {
             display: flex;
         }
+
     </style>
+    <script src="../d3/d3.js"></script>
 </head>
 
 <body>
@@ -35,5 +37,52 @@
         </div>
     </div>
 </body>
+
+<script>
+    let store = {};
+    function loadData() {
+        let promise = d3.csv("../data/routes.csv");
+        return promise.then(routes => {
+            store.routes = routes;
+            return store;
+        });
+    }
+
+    function groupByAirline(data) {
+        //Iterate over each route, producing a dictionary where the keys is are the ailines ids and the values are the information of the airline.
+        let result = data.reduce((result, d) => {
+            let currentData = result[d.AirlineID] || {
+                "AirlineID": d.AirlineID,
+                "AirlineName": d.AirlineName,
+                "Count": 0
+            }
+            
+            //Increment the count (number of routes) of ariline.
+            currentData.Count += 1;
+            
+            //Save the updated information in the dictionary using the airline id as key.
+            result[d.AirlineID] = currentData;
+            return result;
+        }, {});
+
+        //We use this to convert the dictionary produced by the code above, into a list, that will make it easier to create the visualization. 
+        result = Object.keys(result).map(key => result[key]);
+        
+        //Sort the data in descending order of count.
+        result = result.sort((item1, item2) => d3.descending(item1.Count, item2.Count));
+
+        return result;
+    }
+
+    function showData() {
+        //Get the routes from our store variable
+        let routes = store.routes;
+        // Compute the number of routes per airline.
+        let airlines = groupByAirline(routes);
+        console.log(airlines);
+    }
+
+    loadData().then(showData);
+</script>
 
 </html>
