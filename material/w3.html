@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    .line {
+        fill: none;
+        stroke: blue;
+    }
+</style>
+</head>
+
+<body>
+    <svg id="container" height="300" width="500">
+        <g id="body" transform="translate(50, 50)"></g>
+    </svg>
+    <svg id="container2" height="300" width="500">
+        <g id="body2" transform="translate(150, 150)"></g>
+    </svg>
+    <svg id="container3" height="300" width="500">
+        <g id="body3" transform="translate(0, 0)"></g>
+    </svg>
+</body>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<script>
+    let body = d3.select("#body");
+    let body2 = d3.select("#body2");
+    let body3 = d3.select("#body3");
+    Promise.all([
+        d3.csv("../data/w3.csv"),
+        d3.json("../data/countries.geo.json")
+    ]).then((dataSources) => {showData(dataSources); showData2(dataSources);});
+
+    function showData(dataSources) {
+        let data = dataSources[0];
+        let bodyHeight = 200;
+        let bodyWidth = 400;
+        
+        //Transform into proper data type
+        data = data.map((d) => ({
+            name: d.name,
+            date: new Date(d.date),
+            price: +d.price
+        }));
+        
+        let maxValue = d3.max(data, (d) => d.price);
+        let yScale = d3.scaleLinear()
+            .range([bodyHeight, 0]) //The y in coordinate system in SVG is reversed
+            .domain([0, maxValue]);
+        body.append("g").call(d3.axisLeft(yScale));
+        
+        let xScale = d3.scaleTime()
+            .domain(d3.extent(data, (d) => d.date))
+            .range([0, bodyWidth]);
+        body.append("g")
+            .attr("transform", "translate(0, " + bodyHeight + ")")
+            .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%b %d")));
+        
+        //line generator generates svg path
+        valueline = d3.line()
+            .x((d) => xScale(d.date))
+            .y((d) => yScale(d.price))
+            .defined((d) => !!d.price); //Skip the blank values
+        body.append("path")
+            .datum(data)
+            .attr("d", valueline)
+            .attr("class", "line");
+        
+        let pie = d3.pie().value((d) => d.price);
+        let colorScale = d3.scaleOrdinal()
+            .range(d3.schemeCategory10)
+            .domain(data.map((d) => d.name));
+        let arc = d3.arc()
+            .outerRadius(bodyHeight / 2)
+            .innerRadius(50); //If raius 0, pie chart
+        let g = body2.selectAll(".arc")
+            .data(pie(data))
+            .enter()
+            .append("g"); //A section of an arc as a g, easier to add labels
+        g.append("path")
+            .attr("d", arc)
+            .attr("fill", (d) => colorScale(d.data.name));
+    }
+
+    function showData2(dataSources) {
+        let data = dataSources[1];
+        let bodyHeight = 400;
+        let bodyWidth = 400;
+        console.log(data);
+        
+        let dataIndex = [];
+        for(let c of data.features) {
+            dataIndex.push(c.properties.name);
+        }
+        console.log(dataIndex);
+
+        let projection = d3.geoNaturalEarth1()
+            .scale(80) //It uses map's center to scale down; we need to translate to move back to center
+            .translate([bodyWidth / 2, bodyHeight / 2]);
+        let geoPath = d3.geoPath()
+            .projection(projection);
+        let cScale = d3.scaleOrdinal()
+            .domain(dataIndex)
+            .range(["grey", "red"]);
+        
+        body3.selectAll("path")
+            .data(data.features)
+            .enter()
+            .append("path")
+            .attr("d", (d) => geoPath(d))
+            .attr("stroke", "none")
+            .attr("fill", (d) => cScale(d.properties.name));
+    }
+</script>
+</html>
