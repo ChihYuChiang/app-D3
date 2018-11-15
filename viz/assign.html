@@ -45,8 +45,16 @@
             d3.csv("../data/routes.csv"),
             d3.json("../data/countries.geo.json"),
         ]).then(datasets => {
-            store.routes = datasets[0];
-            store.geoJSON = datasets[1]
+            let uniqueId = new Set();
+            let reducer = (acc, cur) => {
+                let id = new Set([cur.SourceAirportID, cur.DestAirportID, cur.AirlineName]);
+                if(!uniqueId.has(id)) acc.push(cur);
+                uniqueId.add(id);
+                return acc;
+            }
+            let uniqueRoutes = datasets[0].reduce(reducer, []);
+            store.routes = uniqueRoutes;
+            store.geoJSON = datasets[1];
             return store;
         })
     }
