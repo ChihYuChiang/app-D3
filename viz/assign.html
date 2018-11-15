@@ -259,6 +259,7 @@
             .attr("fill", "#2a5599");
     }
 
+
     function drawRoutes(airlineID) {
         let routes = store.routes;
         let projection = store.mapProjection; 
@@ -268,9 +269,9 @@
         let selectedRoutes = routes.filter((route) => route.AirlineID === airlineID);
         
         let bindedData = container.selectAll(".route")
-            .data(selectedRoutes, (d) => d.ID) //This second parameter tells D3 what to use to identify the routes, this hepls D3 to correctly find which routes have been added or removed.
+        .data(selectedRoutes, (d) => d.ID) //This second parameter tells D3 what to use to identify the routes, this hepls D3 to correctly find which routes have been added or removed.
         
-        let genCurve = function(d) {
+        function genCurve(d) {
             let offset = .5;
             let [source_x, source_y] = projection([d.SourceLongitude, d.SourceLatitude]);
             let [target_x, target_y] = projection([d.DestLongitude, d.DestLatitude]);
@@ -295,17 +296,27 @@
         //for each line set the start of the line (x1 and y1) to be the position of the source airport (SourceLongitude and SourceLatitude). Use projection to convert longitude and latitude to x and y.
         //for each line set the end of the line (x2 and y2) to be the position of the source airport (DestLongitude and DestLongitude)
         bindedData.enter()
-            .append("path")
-            .classed("route", true)
-            .attr("d", genCurve)
             // .append("line")
             // .attr("x1", (d) => projection([d.SourceLongitude, d.SourceLatitude])[0])
             // .attr("y1", (d) => projection([d.SourceLongitude, d.SourceLatitude])[1])
             // .attr("x2", (d) => projection([d.DestLongitude, d.DestLatitude])[0])
             // .attr("y2", (d) => projection([d.DestLongitude, d.DestLatitude])[1])
+            .append("path")
+            .classed("route", true)
+            .attr("d", genCurve)
             .attr("stroke", "#992a2a")
             .attr("opacity", 0.1)
             .attr("fill", "none")
+            .attr("totalLength", function(d) {return this.getTotalLength();})
+            .attr("stroke-dasharray", function(d) {
+                let totalLength = d3.select(this).attr("totalLength");
+                return totalLength + " " + totalLength;
+            })
+            .attr("stroke-dashoffset", function(d) {return d3.select(this).attr("totalLength");})
+            .transition()
+                .duration(2000)
+                .ease(d3.easeLinear)
+                .attr("stroke-dashoffset", 0);
         
         //use exit function over bindedData to remove any routes that does not satisfy the filter.
         bindedData.exit()
