@@ -177,12 +177,10 @@
             .call(axisX)
         
         container.append("text")
-            .attr("transform",
-                "translate(" + (width / 4 * 3) + " ," +
-                (height - 15) + ")")
-            .style("text-anchor", "middle")
             .text("Number of routes")
             .attr("fill", "black")
+            .attr("transform", "translate(" + (width / 4 * 3) + " ," +                 (height - 15) + ")")
+            .style("text-anchor", "middle")
             .style("font-size", 11);
             
         //Append a g tag to the container, translate it based on the margins and call the axisY axis to draw the left axis.
@@ -234,6 +232,28 @@
         let config = getMapConfig();
         let projection = getMapProjection(config);
         drawBaseMap(config.container, geoJson.features, projection);
+
+        let infoText = config.container.append("text")
+            .text("Auto-playing..")
+            .attr("id", "infoText")
+            .attr("fill", "black")
+            .attr("transform", "translate(" + (config.width / 7 * 6) + " ," + (config.height - 70) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", 11);
+        flashInfo();
+
+        function flashInfo() {
+            infoText
+                .transition()
+                .duration(1000)
+                .ease(d3.easeLinear)
+                .attr("opacity", 0.1)
+                .transition()
+                .duration(1000)
+                .ease(d3.easeLinear)
+                .attr("opacity", 0.9)
+                .on("end", flashInfo);
+        }
     }
 
     function groupByAirport(data) {
@@ -359,7 +379,7 @@
 
     }
 
-    function showCase() {
+    async function showCase() {
         var event_enter = new MouseEvent('mouseenter');
         var event_leave = new MouseEvent('mouseleave');
 
@@ -371,6 +391,7 @@
                     return resolve();
                 }, 2500));
             }
+            d3.select("#infoText").remove();
         }
 
         //Initial timeout then iter
@@ -390,7 +411,6 @@
         drawAirports(airports);
 
         showCase();
-        console.log(airlines)
     }
 
     loadData().then(showData);
