@@ -25,7 +25,7 @@
 </head>
 
 <body>
-    <h3>Largest Airlines by Number of Routes (2013)</h1>
+    <h3>&nbsp Largest Airlines by Number of Routes (2013)</h1>
     <div class="mainView">
         <div>
             <svg id="AirlinesChart"></svg>
@@ -63,11 +63,21 @@
             let currentData = result[d.AirlineID] || {
                 "AirlineID": d.AirlineID,
                 "AirlineName": d.AirlineName,
-                "Count": 0
-            }
+                "Count": 0,
+                "AirportCount": {}
+            };
             
             //Increment the count (number of routes) of airline.
             currentData.Count += 1;
+            
+            //Count the times an airport is included in the routes
+            let destAirportCount = currentData.AirportCount[d.DestAirportID] || 0;
+            destAirportCount += 1;
+            let sourceAirportCount = currentData.AirportCount[d.SourceAirportID] || 0;
+            sourceAirportCount += 1;
+            
+            currentData.AirportCount[d.DestAirportID] = destAirportCount;
+            currentData.AirportCount[d.SourceAirportID] = sourceAirportCount;
             
             //Save the updated information in the dictionary using the airline id as key.
             result[d.AirlineID] = currentData;
@@ -85,12 +95,12 @@
 
     function getAirlinesChartConfig() {
         let width = 400;
-        let height = 420;
+        let height = 450;
         let margin = {
             top: 0,
             bottom: 50,
             left: 130,
-            right: 10
+            right: 30
         };
         //The body is the are that will be occupied by the bars.
         let bodyHeight = height - margin.top - margin.bottom;
@@ -336,6 +346,28 @@
             .remove();
     }
 
+    function highlightAirport() {
+
+    }
+
+    function showCase() {
+        var event_enter = new MouseEvent('mouseenter');
+        var event_leave = new MouseEvent('mouseleave');
+
+        async function iter() {
+            for(let bar of d3.selectAll(".bar").nodes()) {
+                bar.dispatchEvent(event_enter);
+                await new Promise((resolve) => setTimeout(() => {
+                    bar.dispatchEvent(event_leave);
+                    return resolve();
+                }, 2500));
+            }
+        }
+
+        //Initial timeout then iter
+        setTimeout(iter, 2000);
+    }
+
     function showData() {
         //Get the routes from our store variable
         let routes = store.routes;
@@ -347,6 +379,9 @@
 
         let airports = groupByAirport(routes);
         drawAirports(airports);
+
+        showCase();
+        console.log(airlines)
     }
 
     loadData().then(showData);
