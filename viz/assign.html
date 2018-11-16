@@ -6,14 +6,14 @@
             font-family: Helvetica, Arial, sans-serif
         }
 
-        h1 {
+        h3 {
             background-color: #2a5599;
             color: white;
             padding: 5px;
         }
 
-        svg {
-            border: 1px solid black;
+        #Map {
+            border: 1px solid E6E6E6;
         }
 
         .mainView {
@@ -25,14 +25,12 @@
 </head>
 
 <body>
-    <h1>Airlines Routes</h1>
+    <h3>Largest Airlines by Number of Routes (2013)</h1>
     <div class="mainView">
         <div>
-            <h2>Airlines</h2>
             <svg id="AirlinesChart"></svg>
         </div>
         <div>
-            <h2>Airports</h2>
             <svg id="Map"></svg>
         </div>
     </div>
@@ -86,10 +84,10 @@
     }
 
     function getAirlinesChartConfig() {
-        let width = 350;
-        let height = 400;
+        let width = 400;
+        let height = 420;
         let margin = {
-            top: 10,
+            top: 0,
             bottom: 50,
             left: 130,
             right: 10
@@ -144,11 +142,17 @@
             .attr("class", "bar")
             .on("mouseenter", function (d) {
                 drawRoutes(d.AirlineID);
+                d3.selectAll(".tick").filter((dt) => dt === d.AirlineName).select("text")
+                    .attr("fill", "#992a2a")
+                    .style("font-weight", "bold");
                 d3.select(this).attr("fill", "#992a2a");
                 d3.select()
             })
             .on("mouseleave", function (d) {
                 drawRoutes(null); //this will cause the function to remove all lines in the chart since there is no airline withe AirlineID == null.
+                d3.selectAll(".tick").select("text")
+                    .attr("fill", "black")
+                    .style("font-weight", "normal");
                 d3.select(this).attr("fill", "#2a5599");
             });
     }
@@ -253,7 +257,7 @@
 
     function drawAirports(airports) {
         let config = getMapConfig(); //get the config
-        let projection = getMapProjection(config) //get the projection
+        let projection = getMapProjection(config); //get the projection
         let container = config.container; //get the container
         
         //set the x and y position of the circle using the projection to convert longitude and latitude to x and y position.
@@ -264,7 +268,8 @@
             .attr("r", 1)
             .attr("cx", (d) => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", (d) => projection([+d.Longitude, +d.Latitude])[1])
-            .attr("fill", "#2a5599");
+            .attr("fill", "#2a5599")
+            .attr("id", (d) => d.AirportID);
     }
 
 
