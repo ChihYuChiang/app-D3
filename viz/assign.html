@@ -150,7 +150,6 @@
             .attr("class", "bar")
             .on("mouseenter", function (d) {
                 drawRoutes(d.AirlineID);
-                highlightAirports(d);
                 d3.selectAll(".tick").filter((dt) => dt === d.AirlineName).select("text")
                     .attr("fill", "#992a2a")
                     .style("font-weight", "bold");
@@ -307,13 +306,13 @@
             .data(airports)
             .enter()
             .append("circle")
+            .classed("airport", true)
             .attr("r", 1)
             .attr("cx", (d) => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", (d) => projection([+d.Longitude, +d.Latitude])[1])
             .attr("fill", "#2a5599")
-            .attr("id", (d) => d.AirportID);
+            .attr("aid", (d) => d.AirportID);
     }
-
 
     function drawRoutes(airlineID) {
         let routes = store.routes;
@@ -376,10 +375,6 @@
         //use exit function over bindedData to remove any routes that does not satisfy the filter.
         bindedData.exit()
             .remove();
-    }
-
-    function highlightAirports(airline) {
-        console.log(airline);
     }
 
     async function showCase() {
