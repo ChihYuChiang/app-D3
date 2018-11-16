@@ -5,17 +5,14 @@
         body {
             font-family: Helvetica, Arial, sans-serif
         }
-
         h3 {
             background-color: #2a5599;
             color: white;
             padding: 5px;
         }
-
         #Map {
             border: 1px solid E6E6E6;
         }
-
         .mainView {
             display: flex;
         }
@@ -38,6 +35,7 @@
 
 <script>
     let store = {};
+    store.autoPlay = true;
     function loadData() {
         return Promise.all([
             d3.csv("../data/routes.csv"),
@@ -152,11 +150,11 @@
             .attr("class", "bar")
             .on("mouseenter", function (d) {
                 drawRoutes(d.AirlineID);
+                highlightAirports(d);
                 d3.selectAll(".tick").filter((dt) => dt === d.AirlineName).select("text")
                     .attr("fill", "#992a2a")
                     .style("font-weight", "bold");
                 d3.select(this).attr("fill", "#992a2a");
-                d3.select()
             })
             .on("mouseleave", function (d) {
                 drawRoutes(null); //this will cause the function to remove all lines in the chart since there is no airline withe AirlineID == null.
@@ -179,7 +177,7 @@
         container.append("text")
             .text("Number of routes")
             .attr("fill", "black")
-            .attr("transform", "translate(" + (width / 4 * 3) + " ," +                 (height - 15) + ")")
+            .attr("transform", "translate(" + (width / 4 * 3) + " ," + (height - 15) + ")")
             .style("text-anchor", "middle")
             .style("font-size", 11);
             
@@ -234,12 +232,17 @@
         drawBaseMap(config.container, geoJson.features, projection);
 
         let infoText = config.container.append("text")
-            .text("Auto-playing..")
+            .text("Auto-playing, click to stop..")
             .attr("id", "infoText")
             .attr("fill", "black")
             .attr("transform", "translate(" + (config.width / 7 * 6) + " ," + (config.height - 70) + ")")
+            .attr("cursor", "pointer")
             .style("text-anchor", "middle")
-            .style("font-size", 11);
+            .style("font-size", 11)
+            .on("click", function() {
+                store.autoPlay = false;
+                d3.select(this).text("Exit auto-play..");
+            })
         flashInfo();
 
         function flashInfo() {
@@ -321,7 +324,7 @@
         let selectedRoutes = routes.filter((route) => route.AirlineID === airlineID);
         
         let bindedData = container.selectAll(".route")
-        .data(selectedRoutes, (d) => d.ID) //This second parameter tells D3 what to use to identify the routes, this hepls D3 to correctly find which routes have been added or removed.
+            .data(selectedRoutes, (d) => d.ID) //This second parameter tells D3 what to use to identify the routes, this hepls D3 to correctly find which routes have been added or removed.
         
         function genCurve(d) {
             let offset = .5;
@@ -375,13 +378,20 @@
             .remove();
     }
 
-    function highlightAirport() {
-
+    function highlightAirports(airline) {
+        console.log(airline);
     }
 
     async function showCase() {
-        var event_enter = new MouseEvent('mouseenter');
-        var event_leave = new MouseEvent('mouseleave');
+        let {container, height, width} = getAirlinesChartConfig();
+        let mask = container.insert("rect")
+            .attr("id", "mask")
+            .attr("width", width)
+            .attr("height", height)
+            .style('opacity', 0);
+
+        let event_enter = new MouseEvent('mouseenter');
+        let event_leave = new MouseEvent('mouseleave');
 
         async function iter() {
             for(let bar of d3.selectAll(".bar").nodes()) {
@@ -390,8 +400,10 @@
                     bar.dispatchEvent(event_leave);
                     return resolve();
                 }, 2500));
+                if(!store.autoPlay) break;
             }
             d3.select("#infoText").remove();
+            mask.remove();
         }
 
         //Initial timeout then iter
