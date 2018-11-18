@@ -35,12 +35,13 @@
 
 <script>
     let store = {};
-    store.autoPlay = true;
+    store.autoPlay = true; //A marker to tell the program to exit auto-play
     function loadData() {
         return Promise.all([
             d3.csv("../data/routes.csv"),
             d3.json("../data/countries.geo.json"),
         ]).then(datasets => {
+            //Acquire the unique routes an airline operates (destination and source are interchangeable)
             let uniqueId = new Set();
             let reducer = (acc, cur) => {
                 let id = new Set([cur.SourceAirportID, cur.DestAirportID, cur.AirlineName]);
@@ -100,7 +101,7 @@
             left: 130,
             right: 30
         };
-        //The body is the are that will be occupied by the bars.
+        //The body is the area that will be occupied by the bars.
         let bodyHeight = height - margin.top - margin.bottom;
         let bodyWidth = width - margin.left - margin.right;
 
@@ -150,6 +151,7 @@
             .attr("class", "bar")
             .on("mouseenter", function (d) {
                 drawRoutes(d.AirlineID);
+                //Highlight the hovered bar and label
                 d3.selectAll(".tick").filter((dt) => dt === d.AirlineName).select("text")
                     .attr("fill", "#992a2a")
                     .style("font-weight", "bold");
@@ -173,6 +175,7 @@
             .style("transform", `translate(${margin.left}px,${height - margin.bottom}px)`)
             .call(axisX)
         
+        //The axis label for x axis
         container.append("text")
             .text("Number of routes")
             .attr("fill", "black")
@@ -207,7 +210,7 @@
     function getMapProjection(config) {
         let {width, height} = config;
         let projection = d3.geoMercator();
-        projection.scale(97)
+        projection.scale(97) //The usage of a projection is similar to a scale
                     .translate([width / 2, height / 2 + 20]);
                     
         store.mapProjection = projection;
@@ -229,7 +232,8 @@
         let config = getMapConfig();
         let projection = getMapProjection(config);
         drawBaseMap(config.container, geoJson.features, projection);
-
+        
+        //The text indicator, flashing when auto-playing, can be clicked to stop aut0-playing
         let infoText = config.container.append("text")
             .text("Auto-playing, click to stop..")
             .attr("id", "infoText")
@@ -240,7 +244,7 @@
             .style("font-size", 11)
             .on("click", function() {
                 store.autoPlay = false;
-                d3.select(this).text("Exit auto-play..");
+                d3.select(this).text("Exiting auto-play..");
             })
         flashInfo();
 
@@ -342,7 +346,8 @@
             } else {
                 control_x = midpoint_x + Math.abs(offset * dy);
             }
-
+            
+            //Cubic Bezier is smoother than quadratic one
             let curve = `M ${source_x} ${source_y} S ${control_x} ${control_y} ${target_x} ${target_y}`;
             return curve;
         }
@@ -350,11 +355,14 @@
         //for each line set the start of the line (x1 and y1) to be the position of the source airport (SourceLongitude and SourceLatitude). Use projection to convert longitude and latitude to x and y.
         //for each line set the end of the line (x2 and y2) to be the position of the source airport (DestLongitude and DestLongitude)
         bindedData.enter()
+            //Straight line version
             // .append("line")
             // .attr("x1", (d) => projection([d.SourceLongitude, d.SourceLatitude])[0])
             // .attr("y1", (d) => projection([d.SourceLongitude, d.SourceLatitude])[1])
             // .attr("x2", (d) => projection([d.DestLongitude, d.DestLatitude])[0])
             // .attr("y2", (d) => projection([d.DestLongitude, d.DestLatitude])[1])
+
+            //Curvy line version
             .append("path")
             .classed("route", true)
             .attr("d", genCurve)
@@ -377,20 +385,26 @@
             .remove();
     }
 
+    //Draw each airline for 1 round
     async function showCase() {
         let {container, height, width} = getAirlinesChartConfig();
+
+        //When auto-playing, prohibit interaction with the bar chart
         let mask = container.insert("rect")
             .attr("id", "mask")
             .attr("width", width)
             .attr("height", height)
             .style('opacity', 0);
-
+        
+        //Simulate the mouse events
         let event_enter = new MouseEvent('mouseenter');
         let event_leave = new MouseEvent('mouseleave');
 
         async function iter() {
             for(let bar of d3.selectAll(".bar").nodes()) {
                 bar.dispatchEvent(event_enter);
+                
+                //Wait 2500 than next bar
                 await new Promise((resolve) => setTimeout(() => {
                     bar.dispatchEvent(event_leave);
                     return resolve();
@@ -408,7 +422,7 @@
     function showData() {
         //Get the routes from our store variable
         let routes = store.routes;
-        // Compute the number of routes per airline.
+        //Compute the number of routes per airline.
         let airlines = groupByAirline(routes);
         
         drawAirlinesChart(airlines);
